@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Produto</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f2f2f2;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 22px;
+    }
+
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button[type="submit"] {
+      background-color: #ff6d5a;
+      color: white;
+      border: none;
+      margin-top: 20px;
+    }
+
+    #scanner {
+      width: 100%;
+      max-width: 400px;
+      margin: 20px auto;
+      display: none;
+    }
+
+    #start-scan {
+      background-color: #333;
+      color: white;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cadastro de Produto com Leitor de Código de Barras</h1>
+
+  <form id="form" action="https://controledata.app.n8n.cloud/webhook/8c31e5ce-0cf3-47d5-a8fd-3d6bbcf3fe85" method="POST">
+    <label for="ean">Código de Barras</label>
+    <input type="text" id="ean" name="ean" placeholder="Escaneie ou digite o código de barras" required />
+    <button type="button" id="start-scan">Ativar Scanner</button>
+
+    <label for="quantidade">Quantidade</label>
+    <input type="number" name="quantidade" id="quantidade" required />
+
+    <label for="validade">Validade</label>
+    <input type="date" name="validade" id="validade" required />
+
+    <label for="setor">Setor</label>
+    <select name="setor" id="setor" required>
+      <option value="">Selecione</option>
+      <option value="Armazém">Armazém</option>
+      <option value="Padaria">Padaria</option>
+      <option value="Frios e Congelados">Frios e Congelados</option>
+      <option value="Açougue">Açougue</option>
+    </select>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <div id="scanner"></div>
+
+  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+  <script>
+    const scanner = document.getElementById("scanner");
+    const eanField = document.getElementById("ean");
+    const scanButton = document.getElementById("start-scan");
+
+    scanButton.addEventListener("click", () => {
+      scanner.style.display = "block";
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: scanner,
+          constraints: {
+            facingMode: "environment"
+          }
+        },
+        decoder: {
+          readers: ["ean_reader"]
+        }
+      }, function (err) {
+        if (err) {
+          alert("Erro ao iniciar câmera: " + err);
+          console.error(err);
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected(function (data) {
+        if (data.codeResult && data.codeResult.code) {
+          eanField.value = data.codeResult.code;
+          Quagga.stop();
+          scanner.style.display = "none";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
