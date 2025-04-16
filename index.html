@@ -34,6 +34,8 @@
       max-width: 500px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       border-radius: 10px;
+      position: relative;
+      z-index: 1;
     }
 
     label {
@@ -81,10 +83,36 @@
       cursor: pointer;
     }
 
+    #reader-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
     #reader {
-      margin-top: 20px;
-      display: none;
-      width: 100%;
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    #close-scanner {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: white;
+      cursor: pointer;
     }
 
     #signature {
@@ -135,17 +163,25 @@
     </select>
 
     <button type="submit">Enviar</button>
-
-    <div id="reader"></div>
   </form>
+
+  <div id="reader-container" style="display:none;">
+    <button id="close-scanner" onclick="fecharScanner()">&times;</button>
+    <div id="reader"></div>
+  </div>
 
   <div id="signature">
     Desenvolvido por <strong>Maycon Miranda Martins</strong>
   </div>
 
   <script>
+    let html5QrCode;
+
     function iniciarScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
+      const container = document.getElementById("reader-container");
+      container.style.display = "flex";
+
+      html5QrCode = new Html5Qrcode("reader");
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 100 },
@@ -154,21 +190,28 @@
 
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
-          document.getElementById("reader").style.display = "block";
           html5QrCode.start(
             { facingMode: "environment" },
             config,
             (decodedText) => {
               document.getElementById("ean").value = decodedText;
               html5QrCode.stop();
-              document.getElementById("reader").style.display = "none";
+              container.style.display = "none";
             },
             () => {}
           );
         }
       }).catch(err => {
         alert("Erro ao acessar a câmera: " + err);
+        container.style.display = "none";
       });
+    }
+
+    function fecharScanner() {
+      document.getElementById("reader-container").style.display = "none";
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => {});
+      }
     }
   </script>
 </body>
