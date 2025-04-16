@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cadastro de Produto com Leitor</title>
+  <title>Cadastro de Vencimentos de Produtos</title>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
@@ -222,7 +222,7 @@
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
-      fetch("https://controledata.app.n8n.cloud/webhook-test/formulario", {
+      fetch("https://controledata.app.n8n.cloud/webhook/formulario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -233,7 +233,7 @@
         thanks.innerHTML = `
           <div style="text-align: center; margin-top: 50px;">
             <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
-            <p style="font-size: 1.2rem; color: #555;">Obrigado pelo envio.</p>
+            <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
             <button onclick="window.location.reload()" style="
               margin-top: 20px;
               background-color: #ff6b6b;
