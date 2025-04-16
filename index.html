@@ -1,131 +1,138 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadastro de Produto</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Produto com Leitor de Código de Barras</title>
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
   <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      background-color: #f5f6fa;
       margin: 0;
-      padding: 20px;
-      background-color: #f2f2f2;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     h1 {
       text-align: center;
-      font-size: 22px;
+      font-size: 1.5rem;
+      margin-top: 1.5rem;
+      color: #2f3640;
     }
 
     form {
-      background: #fff;
-      padding: 20px;
+      background-color: #ffffff;
       border-radius: 8px;
-      max-width: 600px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     label {
       display: block;
-      margin-top: 10px;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      color: #333;
+      font-weight: 600;
     }
 
-    input, select, button {
+    input, select {
       width: 100%;
       padding: 10px;
-      margin-top: 6px;
+      border: 1px solid #dcdde1;
       border-radius: 5px;
-      border: 1px solid #ccc;
+      font-size: 1rem;
     }
 
-    button[type="submit"] {
-      background-color: #ff6d5a;
-      color: white;
-      border: none;
+    button {
       margin-top: 20px;
-    }
-
-    #scanner {
       width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
-      display: none;
+      padding: 12px;
+      background-color: #ff6b6b;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
     }
 
-    #start-scan {
-      background-color: #333;
-      color: white;
-      margin-top: 10px;
+    button:hover {
+      background-color: #ff4757;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-
   <h1>Cadastro de Produto com Leitor de Código de Barras</h1>
 
-  <form id="form" action="https://controledata.app.n8n.cloud/webhook-test/formulario" method="POST">
+  <div id="reader"></div>
+
+  <form action="https://controledata.app.n8n.cloud/webhook-test/formulario" method="POST">
     <label for="ean">Código de Barras</label>
-    <input type="text" id="ean" name="ean" placeholder="Escaneie ou digite o código de barras" required />
-    <button type="button" id="start-scan">Ativar Scanner</button>
+    <input type="text" id="ean" name="ean" required>
 
     <label for="quantidade">Quantidade</label>
-    <input type="number" name="quantidade" id="quantidade" required />
+    <input type="number" id="quantidade" name="quantidade" required>
 
     <label for="validade">Validade</label>
-    <input type="date" name="validade" id="validade" required />
+    <input type="date" id="validade" name="validade" required>
 
     <label for="setor">Setor</label>
-    <select name="setor" id="setor" required>
-      <option value="">Selecione</option>
-      <option value="Armazém">Armazém</option>
-      <option value="Padaria">Padaria</option>
-      <option value="Frios e Congelados">Frios e Congelados</option>
-      <option value="Açougue">Açougue</option>
+    <select id="setor" name="setor" required>
+      <option value="">Selecione...</option>
+      <option>Armazém</option>
+      <option>Padaria</option>
+      <option>Açougue</option>
+      <option>Frios e Congelados</option>
     </select>
 
     <button type="submit">Enviar</button>
   </form>
 
-  <div id="scanner"></div>
-
-  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
   <script>
-    const scanner = document.getElementById("scanner");
-    const eanField = document.getElementById("ean");
-    const scanButton = document.getElementById("start-scan");
+    window.onload = () => {
+      const html5QrCode = new Html5Qrcode("reader");
 
-    scanButton.addEventListener("click", () => {
-      scanner.style.display = "block";
-      Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: scanner,
-          constraints: {
-            facingMode: "environment"
-          }
-        },
-        decoder: {
-          readers: ["ean_reader"]
-        }
-      }, function (err) {
-        if (err) {
-          alert("Erro ao iniciar câmera: " + err);
-          console.error(err);
-          return;
-        }
-        Quagga.start();
-      });
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 100 },
+        formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
+      };
 
-      Quagga.onDetected(function (data) {
-        if (data.codeResult && data.codeResult.code) {
-          eanField.value = data.codeResult.code;
-          Quagga.stop();
-          scanner.style.display = "none";
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+              document.getElementById("ean").value = decodedText;
+              html5QrCode.stop();
+              document.getElementById("reader").innerHTML = "<p><strong>Escaneado com sucesso!</strong></p>";
+            },
+            (error) => {
+              // Silencioso
+            }
+          ).catch(err => {
+            document.getElementById("reader").innerHTML = "<p>Erro ao iniciar a câmera: " + err + "</p>";
+          });
         }
+      }).catch(err => {
+        document.getElementById("reader").innerHTML = "<p>Erro ao acessar a câmera: " + err + "</p>";
       });
-    });
+    };
   </script>
 </body>
 </html>
