@@ -34,6 +34,7 @@
       width: 90%;
       max-width: 500px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
     }
 
     label {
@@ -71,13 +72,22 @@
     #reader {
       width: 100%;
       max-width: 500px;
-      margin-top: 20px;
+      margin: 10px auto;
+      display: none;
+    }
+
+    #signature {
+      text-align: center;
+      margin: 30px 0;
+      font-size: 0.9rem;
+      color: #888;
     }
   </style>
 </head>
 <body>
   <h1>Cadastro de Produto com Leitor de Código de Barras</h1>
 
+  <button onclick="iniciarScanner()">Ativar Scanner</button>
   <div id="reader"></div>
 
   <form action="https://controledata.app.n8n.cloud/webhook-test/formulario" method="POST">
@@ -102,8 +112,12 @@
     <button type="submit">Enviar</button>
   </form>
 
+  <div id="signature">
+    Desenvolvido por <strong>Maycon Miranda Martins</strong>
+  </div>
+
   <script>
-    window.onload = () => {
+    function iniciarScanner() {
       const html5QrCode = new Html5Qrcode("reader");
 
       const config = {
@@ -114,6 +128,7 @@
 
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
+          document.getElementById("reader").style.display = "block";
           html5QrCode.start(
             { facingMode: "environment" },
             config,
@@ -123,7 +138,7 @@
               document.getElementById("reader").innerHTML = "<p><strong>Escaneado com sucesso!</strong></p>";
             },
             (error) => {
-              // Silencioso
+              // erro silencioso
             }
           ).catch(err => {
             document.getElementById("reader").innerHTML = "<p>Erro ao iniciar a câmera: " + err + "</p>";
@@ -132,7 +147,7 @@
       }).catch(err => {
         document.getElementById("reader").innerHTML = "<p>Erro ao acessar a câmera: " + err + "</p>";
       });
-    };
+    }
   </script>
 </body>
 </html>
