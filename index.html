@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de Produto com Leitor de Código de Barras</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Produto com Leitor</title>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     * {
       box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
     }
 
     body {
@@ -22,77 +23,101 @@
 
     h1 {
       text-align: center;
-      font-size: 1.5rem;
       margin-top: 1.5rem;
       color: #2f3640;
     }
 
     form {
-      background-color: #ffffff;
-      border-radius: 8px;
+      background-color: #fff;
       padding: 20px;
       width: 90%;
       max-width: 500px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
     }
 
     label {
-      display: block;
       margin-top: 15px;
-      margin-bottom: 5px;
+      display: block;
+      font-weight: bold;
       color: #333;
-      font-weight: 600;
+    }
+
+    .ean-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ean-group input {
+      flex: 1;
     }
 
     input, select {
       width: 100%;
       padding: 10px;
-      border: 1px solid #dcdde1;
-      border-radius: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
       font-size: 1rem;
     }
 
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background-color: #ff6b6b;
-      color: #fff;
+    .scanner-btn {
+      background: none;
       border: none;
-      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #ff6b6b;
+    }
+
+    button[type="submit"] {
+      margin-top: 20px;
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 12px;
       font-size: 1rem;
+      border-radius: 6px;
+      width: 100%;
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #ff4757;
-    }
-
     #reader {
-      width: 100%;
-      max-width: 500px;
-      margin: 10px auto;
+      margin-top: 20px;
       display: none;
+      width: 100%;
     }
 
     #signature {
-      text-align: center;
-      margin: 30px 0;
-      font-size: 0.9rem;
+      margin: 40px 0 20px;
       color: #888;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      .ean-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .scanner-btn {
+        align-self: flex-start;
+        margin-top: -8px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Cadastro de Produto com Leitor de Código de Barras</h1>
+  <h1>Cadastro de Produto com Leitor</h1>
 
-  <button onclick="iniciarScanner()">Ativar Scanner</button>
-  <div id="reader"></div>
-
-  <form action="https://controledata.app.n8n.cloud/webhook-test/formulario" method="POST">
+  <form action="https://controledata.app.n8n.cloud/webhook-test/8c31e5ce-0cf3-47d5-a8fd-3d6bbcf3fe85" method="POST">
     <label for="ean">Código de Barras</label>
-    <input type="text" id="ean" name="ean" required>
+    <div class="ean-group">
+      <input type="text" id="ean" name="ean" required placeholder="Digite ou escaneie o código">
+      <button type="button" class="scanner-btn" onclick="iniciarScanner()" title="Ativar Scanner">
+        <i class="fas fa-barcode"></i>
+      </button>
+    </div>
 
     <label for="quantidade">Quantidade</label>
     <input type="number" id="quantidade" name="quantidade" required>
@@ -110,6 +135,8 @@
     </select>
 
     <button type="submit">Enviar</button>
+
+    <div id="reader"></div>
   </form>
 
   <div id="signature">
@@ -119,7 +146,6 @@
   <script>
     function iniciarScanner() {
       const html5QrCode = new Html5Qrcode("reader");
-
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 100 },
@@ -135,17 +161,13 @@
             (decodedText) => {
               document.getElementById("ean").value = decodedText;
               html5QrCode.stop();
-              document.getElementById("reader").innerHTML = "<p><strong>Escaneado com sucesso!</strong></p>";
+              document.getElementById("reader").style.display = "none";
             },
-            (error) => {
-              // erro silencioso
-            }
-          ).catch(err => {
-            document.getElementById("reader").innerHTML = "<p>Erro ao iniciar a câmera: " + err + "</p>";
-          });
+            () => {}
+          );
         }
       }).catch(err => {
-        document.getElementById("reader").innerHTML = "<p>Erro ao acessar a câmera: " + err + "</p>";
+        alert("Erro ao acessar a câmera: " + err);
       });
     }
   </script>
