@@ -222,7 +222,7 @@
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
-      fetch("https://fagz8774.rsrv.host/webhook-test/formulario", {
+      fetch("https://fagz8774.rsrv.host/webhook/formulario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
