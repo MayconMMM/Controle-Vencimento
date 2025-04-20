@@ -216,39 +216,42 @@
 
     const form = document.getElementById("productForm");
 
-    form.addEventListener("submit", function(e) {
+    form.addEventListener("submit", async function(e) {
       e.preventDefault();
 
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
-      fetch("http://localhost:5678/webhook/formulario", {
+      // Delay aleatório de 500ms a 3000ms
+      const delayMs = Math.floor(Math.random() * 2500) + 500;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+
+      await fetch("http://localhost:5678/webhook/formulario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
-      }).then(() => {
-        form.style.display = "none";
-
-        const thanks = document.createElement("div");
-        thanks.innerHTML = `
-          <div style="text-align: center; margin-top: 50px;">
-            <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
-            <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
-            <button onclick="window.location.reload()" style="
-              margin-top: 20px;
-              background-color: #ff6b6b;
-              color: white;
-              border: none;
-              padding: 12px 20px;
-              font-size: 1rem;
-              border-radius: 6px;
-              cursor: pointer;">
-              Cadastrar outro produto
-            </button>
-          </div>
-        `;
-        document.body.appendChild(thanks);
       });
+
+      form.style.display = "none";
+      const thanks = document.createElement("div");
+      thanks.innerHTML = `
+        <div style="text-align: center; margin-top: 50px;">
+          <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
+          <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
+          <button onclick="window.location.reload()" style="
+            margin-top: 20px;
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;">
+            Cadastrar outro produto
+          </button>
+        </div>
+      `;
+      document.body.appendChild(thanks);
     });
   </script>
 </body>
