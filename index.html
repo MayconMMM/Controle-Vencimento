@@ -170,7 +170,6 @@
       <option>Frios e Congelados</option>
     </select>
 
-    <!-- Campo oculto para data/hora da captura -->
     <input type="hidden" id="captura" name="captura" />
 
     <button type="submit">Enviar</button>
@@ -231,9 +230,13 @@
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
 
-      const capturaInput = document.getElementById("captura");
-      capturaInput.value = new Date().toISOString(); // Data/hora ISO no envio
+      // Data/hora no formato brasileiro
+      const agora = new Date();
+      const dataBR = agora.toLocaleDateString('pt-BR');
+      const horaBR = agora.toLocaleTimeString('pt-BR');
+      document.getElementById("captura").value = `${dataBR} ${horaBR}`;
 
+      // Mostrar mensagem de envio
       const statusDiv = document.getElementById("enviando-status");
       statusDiv.style.display = "block";
 
