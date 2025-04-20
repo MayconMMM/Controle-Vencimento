@@ -1,38 +1,258 @@
-form.addEventListener("submit", async function(e) {
-  e.preventDefault();
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Vencimento</title>
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
 
-  const formData = new FormData(form);
-  const data = Object.fromEntries(formData.entries());
+    body {
+      background-color: #f5f6fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-  // Delay aleatório entre 2 e 10 segundos
-  const delayMs = Math.floor(Math.random() * 8000) + 2000;
-  console.log(`Aguardando ${delayMs}ms antes de enviar...`);
-  await new Promise(resolve => setTimeout(resolve, delayMs));
+    h1 {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #2f3640;
+    }
 
-  await fetch("http://localhost:5678/webhook/formulario", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+    form {
+      background-color: #fff;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      position: relative;
+      z-index: 1;
+    }
 
-  form.style.display = "none";
-  const thanks = document.createElement("div");
-  thanks.innerHTML = `
-    <div style="text-align: center; margin-top: 50px;">
-      <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
-      <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
-      <button onclick="window.location.reload()" style="
-        margin-top: 20px;
-        background-color: #ff6b6b;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 1rem;
-        border-radius: 6px;
-        cursor: pointer;">
-        Cadastrar outro produto
+    label {
+      margin-top: 15px;
+      display: block;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .ean-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ean-group input {
+      flex: 1;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    .scanner-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #ff6b6b;
+    }
+
+    button[type="submit"] {
+      margin-top: 20px;
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 6px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    #reader-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    #reader {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    #close-scanner {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    #signature {
+      margin: 40px 0 20px;
+      color: #888;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      .ean-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .scanner-btn {
+        align-self: flex-start;
+        margin-top: -8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Cadastro de Vencimento</h1>
+
+  <form id="productForm">
+    <label for="ean">Código de Barras</label>
+    <div class="ean-group">
+      <input type="text" id="ean" name="ean" required placeholder="Digite ou escaneie o código">
+      <button type="button" class="scanner-btn" onclick="iniciarScanner()" title="Ativar Scanner">
+        <i class="fas fa-barcode"></i>
       </button>
     </div>
-  `;
-  document.body.appendChild(thanks);
-});
+
+    <label for="quantidade">Quantidade</label>
+    <input type="number" id="quantidade" name="quantidade" required>
+
+    <label for="validade">Validade</label>
+    <input type="date" id="validade" name="validade" required>
+
+    <label for="setor">Setor</label>
+    <select id="setor" name="setor" required>
+      <option value="">Selecione...</option>
+      <option>Armazém</option>
+      <option>Padaria</option>
+      <option>Açougue</option>
+      <option>Frios e Congelados</option>
+    </select>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <div id="reader-container" style="display:none;">
+    <button id="close-scanner" onclick="fecharScanner()">&times;</button>
+    <div id="reader"></div>
+  </div>
+
+  <div id="signature">
+    Desenvolvido por <strong>Maycon Miranda Martins</strong>
+  </div>
+
+  <script>
+    let html5QrCode;
+
+    function iniciarScanner() {
+      const container = document.getElementById("reader-container");
+      container.style.display = "flex";
+
+      html5QrCode = new Html5Qrcode("reader");
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 100 },
+        formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
+      };
+
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+              document.getElementById("ean").value = decodedText;
+              html5QrCode.stop();
+              container.style.display = "none";
+            },
+            () => {}
+          );
+        }
+      }).catch(err => {
+        alert("Erro ao acessar a câmera: " + err);
+        container.style.display = "none";
+      });
+    }
+
+    function fecharScanner() {
+      document.getElementById("reader-container").style.display = "none";
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => {});
+      }
+    }
+
+    const form = document.getElementById("productForm");
+
+    form.addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      // Delay aleatório entre 2 e 10 segundos
+      const delayMs = Math.floor(Math.random() * 8000) + 2000;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+
+      await fetch("http://localhost:5678/webhook/formulario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      form.style.display = "none";
+      const thanks = document.createElement("div");
+      thanks.innerHTML = `
+        <div style="text-align: center; margin-top: 50px;">
+          <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
+          <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
+          <button onclick="window.location.reload()" style="
+            margin-top: 20px;
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;">
+            Cadastrar outro produto
+          </button>
+        </div>
+      `;
+      document.body.appendChild(thanks);
+    });
+  </script>
+</body>
+</html>
