@@ -222,8 +222,8 @@
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
-      // Delay aleatório entre 2 e 10 segundos
-      const delayMs = Math.floor(Math.random() * 8000) + 2000;
+      // Delay aleatório entre 5 e 15 segundos
+      const delayMs = Math.floor(Math.random() * 10000) + 5000;
       await new Promise(resolve => setTimeout(resolve, delayMs));
 
       await fetch("http://localhost:5678/webhook/formulario", {
