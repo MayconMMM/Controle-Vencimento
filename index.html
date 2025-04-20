@@ -83,6 +83,14 @@
       cursor: pointer;
     }
 
+    #enviando-status {
+      margin-top: 15px;
+      font-size: 1rem;
+      color: #555;
+      text-align: center;
+      display: none;
+    }
+
     #reader-container {
       position: fixed;
       top: 0;
@@ -162,7 +170,11 @@
       <option>Frios e Congelados</option>
     </select>
 
+    <!-- Campo oculto para data/hora da captura -->
+    <input type="hidden" id="captura" name="captura" />
+
     <button type="submit">Enviar</button>
+    <div id="enviando-status">⏳ Enviando, por favor aguarde...</div>
   </form>
 
   <div id="reader-container" style="display:none;">
@@ -219,6 +231,12 @@
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
 
+      const capturaInput = document.getElementById("captura");
+      capturaInput.value = new Date().toISOString(); // Data/hora ISO no envio
+
+      const statusDiv = document.getElementById("enviando-status");
+      statusDiv.style.display = "block";
+
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
@@ -226,13 +244,15 @@
       const delayMs = Math.floor(Math.random() * 10000) + 5000;
       await new Promise(resolve => setTimeout(resolve, delayMs));
 
-      await fetch("http://localhost:5678/webhook-test/formulario", {
+      await fetch("http://localhost:5678/webhook/formulario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
 
       form.style.display = "none";
+      statusDiv.style.display = "none";
+
       const thanks = document.createElement("div");
       thanks.innerHTML = `
         <div style="text-align: center; margin-top: 50px;">
