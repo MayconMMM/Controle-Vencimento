@@ -1,80 +1,38 @@
-<script>
-  let html5QrCode;
+form.addEventListener("submit", async function(e) {
+  e.preventDefault();
 
-  function iniciarScanner() {
-    const container = document.getElementById("reader-container");
-    container.style.display = "flex";
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
 
-    html5QrCode = new Html5Qrcode("reader");
-    const config = {
-      fps: 10,
-      qrbox: { width: 250, height: 100 },
-      formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
-    };
+  // Delay aleatório entre 2 e 10 segundos
+  const delayMs = Math.floor(Math.random() * 8000) + 2000;
+  console.log(`Aguardando ${delayMs}ms antes de enviar...`);
+  await new Promise(resolve => setTimeout(resolve, delayMs));
 
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          (decodedText) => {
-            document.getElementById("ean").value = decodedText;
-            html5QrCode.stop();
-            container.style.display = "none";
-          },
-          () => {}
-        );
-      }
-    }).catch(err => {
-      alert("Erro ao acessar a câmera: " + err);
-      container.style.display = "none";
-    });
-  }
-
-  function fecharScanner() {
-    document.getElementById("reader-container").style.display = "none";
-    if (html5QrCode) {
-      html5QrCode.stop().catch(() => {});
-    }
-  }
-
-  const form = document.getElementById("productForm");
-
-  form.addEventListener("submit", async function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-
-    // Delay aleatório entre 2 e 4 segundos
-    const delayMs = Math.floor(Math.random() * 2000) + 2000;
-    await new Promise(resolve => setTimeout(resolve, delayMs));
-
-    await fetch("http://localhost:5678/webhook/formulario", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    form.style.display = "none";
-    const thanks = document.createElement("div");
-    thanks.innerHTML = `
-      <div style="text-align: center; margin-top: 50px;">
-        <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
-        <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
-        <button onclick="window.location.reload()" style="
-          margin-top: 20px;
-          background-color: #ff6b6b;
-          color: white;
-          border: none;
-          padding: 12px 20px;
-          font-size: 1rem;
-          border-radius: 6px;
-          cursor: pointer;">
-          Cadastrar outro produto
-        </button>
-      </div>
-    `;
-    document.body.appendChild(thanks);
+  await fetch("http://localhost:5678/webhook/formulario", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
   });
-</script>
+
+  form.style.display = "none";
+  const thanks = document.createElement("div");
+  thanks.innerHTML = `
+    <div style="text-align: center; margin-top: 50px;">
+      <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
+      <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
+      <button onclick="window.location.reload()" style="
+        margin-top: 20px;
+        background-color: #ff6b6b;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 6px;
+        cursor: pointer;">
+        Cadastrar outro produto
+      </button>
+    </div>
+  `;
+  document.body.appendChild(thanks);
+});
