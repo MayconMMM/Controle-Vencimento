@@ -247,7 +247,7 @@
       const delayMs = Math.floor(Math.random() * 10000) + 5000;
       await new Promise(resolve => setTimeout(resolve, delayMs));
 
-      await fetch("https://script.google.com/macros/s/AKfycbyZZaOMTdIhNgyq9WxmloAv7-XQPAqYWdUhvfcyIr21oKrjX5ELmaLO9LUQfHOUii0Bmg/exec", {
+      await fetch("http://localhost:5678/webhook/formulario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
