@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cadastro de Vencimento</title>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body {
       background-color: #f5f6fa;
       margin: 0;
@@ -20,13 +18,11 @@
       flex-direction: column;
       align-items: center;
     }
-
     h1 {
       text-align: center;
       margin-top: 1.5rem;
       color: #2f3640;
     }
-
     form {
       background-color: #fff;
       padding: 20px;
@@ -34,27 +30,21 @@
       max-width: 500px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       border-radius: 10px;
-      position: relative;
-      z-index: 1;
     }
-
     label {
       margin-top: 15px;
       display: block;
       font-weight: bold;
       color: #333;
     }
-
     .ean-group {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-
     .ean-group input {
       flex: 1;
     }
-
     input, select {
       width: 100%;
       padding: 10px;
@@ -62,7 +52,6 @@
       border: 1px solid #ccc;
       font-size: 1rem;
     }
-
     .scanner-btn {
       background: none;
       border: none;
@@ -70,8 +59,7 @@
       font-size: 1.5rem;
       color: #ff6b6b;
     }
-
-    button[type="submit"] {
+    button[type="submit"], .baixar-btn {
       margin-top: 20px;
       background-color: #ff6b6b;
       color: white;
@@ -82,7 +70,6 @@
       width: 100%;
       cursor: pointer;
     }
-
     #enviando-status {
       margin-top: 15px;
       font-size: 1rem;
@@ -90,7 +77,6 @@
       text-align: center;
       display: none;
     }
-
     #reader-container {
       position: fixed;
       top: 0;
@@ -103,7 +89,6 @@
       align-items: center;
       z-index: 999;
     }
-
     #reader {
       width: 90%;
       max-width: 400px;
@@ -111,7 +96,6 @@
       border-radius: 10px;
       padding: 10px;
     }
-
     #close-scanner {
       position: absolute;
       top: 10px;
@@ -122,24 +106,35 @@
       color: white;
       cursor: pointer;
     }
-
+    #comprovante {
+      display: none;
+      background: #fff;
+      width: 90%;
+      max-width: 500px;
+      margin: 20px 0;
+      padding: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+      word-break: break-word;
+    }
+    th {
+      background-color: #f1f1f1;
+    }
     #signature {
       margin: 40px 0 20px;
       color: #888;
       font-size: 0.9rem;
       text-align: center;
-    }
-
-    @media (max-width: 500px) {
-      .ean-group {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .scanner-btn {
-        align-self: flex-start;
-        margin-top: -8px;
-      }
     }
   </style>
 </head>
@@ -170,8 +165,10 @@
       <option>Frios e Congelados</option>
     </select>
 
-    <input type="hidden" id="captura" name="captura" />
+    <label for="responsavel">Responsável</label>
+    <input type="text" id="responsavel" name="responsavel" placeholder="Digite seu nome" required>
 
+    <input type="hidden" id="captura" name="captura" />
     <button type="submit">Enviar</button>
     <div id="enviando-status">⏳ Enviando, por favor aguarde...</div>
   </form>
@@ -181,6 +178,26 @@
     <div id="reader"></div>
   </div>
 
+  <div id="comprovante">
+    <h3>Comprovante de Envio</h3>
+    <div id="comprovante-content">
+      <table>
+        <thead>
+          <tr>
+            <th>EAN</th>
+            <th>Quantidade</th>
+            <th>Validade</th>
+            <th>Setor</th>
+            <th>Data/Hora</th>
+            <th>Responsável</th>
+          </tr>
+        </thead>
+        <tbody id="comprovante-tabela"></tbody>
+      </table>
+    </div>
+    <button class="baixar-btn" onclick="baixarPDF()">⬇️ Baixar Comprovante em PDF</button>
+  </div>
+
   <div id="signature">
     Desenvolvido por <strong>Maycon Miranda Martins</strong>
   </div>
@@ -188,62 +205,55 @@
   <script>
     let html5QrCode;
 
+    window.onload = () => {
+      const nomeSalvo = localStorage.getItem("responsavel");
+      if (nomeSalvo) document.getElementById("responsavel").value = nomeSalvo;
+    };
+
     function iniciarScanner() {
-      const container = document.getElementById("reader-container");
-      container.style.display = "flex";
-
+      document.getElementById("reader-container").style.display = "flex";
       html5QrCode = new Html5Qrcode("reader");
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 100 },
-        formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
-      };
-
+      const config = { fps: 10, qrbox: { width: 250, height: 100 }, formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13] };
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
-          html5QrCode.start(
-            { facingMode: "environment" },
-            config,
-            (decodedText) => {
-              document.getElementById("ean").value = decodedText;
-              html5QrCode.stop();
-              container.style.display = "none";
-            },
-            () => {}
-          );
+          html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            document.getElementById("ean").value = decodedText;
+            html5QrCode.stop();
+            document.getElementById("reader-container").style.display = "none";
+          });
         }
       }).catch(err => {
         alert("Erro ao acessar a câmera: " + err);
-        container.style.display = "none";
+        document.getElementById("reader-container").style.display = "none";
       });
     }
 
     function fecharScanner() {
       document.getElementById("reader-container").style.display = "none";
-      if (html5QrCode) {
-        html5QrCode.stop().catch(() => {});
-      }
+      if (html5QrCode) html5QrCode.stop().catch(() => {});
     }
 
     const form = document.getElementById("productForm");
+    const tabela = document.getElementById("comprovante-tabela");
 
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
-
-      // Data/hora no formato brasileiro
       const agora = new Date();
-      const dataBR = agora.toLocaleDateString('pt-BR');
-      const horaBR = agora.toLocaleTimeString('pt-BR');
-      document.getElementById("captura").value = `${dataBR} ${horaBR}`;
+      const dataHora = agora.toLocaleString('pt-BR');
+      document.getElementById("captura").value = dataHora;
 
-      // Mostrar mensagem de envio
-      const statusDiv = document.getElementById("enviando-status");
-      statusDiv.style.display = "block";
+      const nomeResponsavel = document.getElementById("responsavel").value.trim();
+      if (nomeResponsavel) localStorage.setItem("responsavel", nomeResponsavel);
 
+      document.getElementById("enviando-status").style.display = "block";
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
-      // Delay aleatório entre 5 e 15 segundos
+      if (data.validade) {
+        const [ano, mes, dia] = data.validade.split("-");
+        data.validade = `${dia}/${mes}/${ano}`;
+      }
+
       const delayMs = Math.floor(Math.random() * 8000) + 2000;
       await new Promise(resolve => setTimeout(resolve, delayMs));
 
@@ -253,29 +263,54 @@
         body: JSON.stringify(data)
       });
 
-      form.style.display = "none";
-      statusDiv.style.display = "none";
-
-      const thanks = document.createElement("div");
-      thanks.innerHTML = `
-        <div style="text-align: center; margin-top: 50px;">
-          <h2 style="color: #2f3640;">✅ Produto cadastrado com sucesso!</h2>
-          <p style="font-size: 1.2rem; color: #555;">Obrigado pela Contribuição 🥹.</p>
-          <button onclick="window.location.reload()" style="
-            margin-top: 20px;
-            background-color: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 1rem;
-            border-radius: 6px;
-            cursor: pointer;">
-            Cadastrar outro produto
-          </button>
-        </div>
-      `;
-      document.body.appendChild(thanks);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${data.ean}</td><td>${data.quantidade}</td><td>${data.validade}</td><td>${data.setor}</td><td>${dataHora}</td><td>${nomeResponsavel}</td>`;
+      tabela.appendChild(tr);
+      document.getElementById("comprovante").style.display = "block";
+      form.reset();
+      document.getElementById("responsavel").value = nomeResponsavel;
+      document.getElementById("enviando-status").style.display = "none";
     });
+
+    function baixarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const headers = [["EAN", "Quantidade", "Validade", "Setor", "Data/Hora", "Responsável"]];
+      const rows = [];
+
+      const linhas = document.querySelectorAll("#comprovante-tabela tr");
+      linhas.forEach(tr => {
+        const dados = Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim());
+        if (dados.length === 6) rows.push(dados);
+      });
+
+      if (rows.length === 0) {
+        alert("Nenhum dado para gerar o PDF.");
+        return;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Controle de Vencimento Coop Itavuvu", doc.internal.pageSize.getWidth() / 2, 15, { align: "center" });
+
+      doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 25,
+        theme: 'grid',
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [255, 107, 107] },
+        margin: { top: 20 },
+        didDrawPage: function (data) {
+          doc.setFontSize(9);
+          doc.setTextColor(150);
+          doc.text("Desenvolvido por Maycon Miranda Martins", doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        }
+      });
+
+      doc.save("comprovante-envio.pdf");
+    }
   </script>
 </body>
 </html>
